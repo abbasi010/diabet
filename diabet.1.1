@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پیش‌بینی دیابت - مدل هوش مصنوعی</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            direction: ltr;
+            text-align: left;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .significant {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .marginally-significant {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .not-significant {
+            color: #e74c3c;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .result-container {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-title {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .diabetes-positive {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+        
+        .diabetes-negative {
+            background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);
+            color: white;
+        }
+        
+        .probability {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .model-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .variables-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .variable-item {
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 پیش‌بینی دیابت با مدل هوش مصنوعی</h1>
+        
+        <div class="form-group">
+            <label for="pregnancies">تعداد بارداری‌ها <span class="significant">(معنادار)</span></label>
+            <input type="number" id="pregnancies" min="0" step="1" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="glucose">گلوکز (قند خون) <span class="significant">(معنادار)</span></label>
+            <input type="number" id="glucose" min="0" value="100">
+        </div>
+        
+        <div class="form-group">
+            <label for="bloodpressure">فشار خون <span class="significant">(معنادار)</span></label>
+            <input type="number" id="bloodpressure" min="0" value="70">
+        </div>
+        
+        <div class="form-group">
+            <label for="skinthickness">ضخامت پوست <span class="not-significant">(غیرمعنادار)</span></label>
+            <input type="number" id="skinthickness" min="0" value="20">
+        </div>
+        
+        <div class="form-group">
+            <label for="insulin">انسولین <span class="not-significant">(غیرمعنادار)</span></label>
+            <input type="number" id="insulin" min="0" value="80">
+        </div>
+        
+        <div class="form-group">
+            <label for="bmi">شاخص توده بدنی (BMI) <span class="significant">(معنادار)</span></label>
+            <input type="number" id="bmi" min="0" step="0.1" value="25.0">
+        </div>
+        
+        <div class="form-group">
+            <label for="diabetespedigree">تاریخچه خانوادگی دیابت <span class="significant">(معنادار)</span></label>
+            <input type="number" id="diabetespedigree" min="0" step="0.01" value="0.5">
+        </div>
+        
+        <div class="form-group">
+            <label for="age">سن <span class="marginally-significant">(نزدیک به معنادار)</span></label>
+            <input type="number" id="age" min="0" value="30">
+        </div>
+        
+        <button class="btn" onclick="predictDiabetes()">🔍 پیش‌بینی دیابت</button>
+        
+        <div class="model-info">
+            <p><strong>اطلاعات مدل:</strong> مدل رگرسیون لجستیک با داده‌های واقعی آموزش دیده است.</p>
+            <p><strong>متغیرهای کلیدی:</strong> گلوکز، BMI، تعداد بارداری‌ها و تاریخچه خانوادگی بیشترین تأثیر را دارند.</p>
+        </div>
+        
+        <div id="result" class="result-container">
+            <div class="result-title">نتیجه پیش‌بینی</div>
+            <div class="probability" id="probability">0%</div>
+            <div id="diagnosis">در انتظار ورود داده‌ها...</div>
+        </div>
+    </div>
+
+    <script>
+        function predictDiabetes() {
+            // گرفتن مقادیر ورودی
+            const pregnancies = parseFloat(document.getElementById('pregnancies').value);
+            const glucose = parseFloat(document.getElementById('glucose').value);
+            const bloodpressure = parseFloat(document.getElementById('bloodpressure').value);
+            const skinthickness = parseFloat(document.getElementById('skinthickness').value);
+            const insulin = parseFloat(document.getElementById('insulin').value);
+            const bmi = parseFloat(document.getElementById('bmi').value);
+            const diabetespedigree = parseFloat(document.getElementById('diabetespedigree').value);
+            const age = parseFloat(document.getElementById('age').value);
+            
+            // ضرایب مدل از SPSS Modeler
+            const coefficients = {
+                constant: -0.854,
+                pregnancies: 0.021,
+                glucose: 0.006,
+                bloodpressure: -0.002,
+                skinthickness: 0.000,
+                insulin: 0.000,
+                bmi: 0.013,
+                diabetespedigree: 0.147,
+                age: 0.003
+            };
+            
+            // محاسبه z-score
+            const z = coefficients.constant +
+                      (coefficients.pregnancies * pregnancies) +
+                      (coefficients.glucose * glucose) +
+                      (coefficients.bloodpressure * bloodpressure) +
+                      (coefficients.skinthickness * skinthickness) +
+                      (coefficients.insulin * insulin) +
+                      (coefficients.bmi * bmi) +
+                      (coefficients.diabetespedigree * diabetespedigree) +
+                      (coefficients.age * age);
+            
+            // محاسبه احتمال با استفاده از تابع سیگموئید
+            const probability = 1 / (1 + Math.exp(-z));
+            const probabilityPercent = Math.round(probability * 100);
+            
+            // نمایش نتیجه
+            const resultDiv = document.getElementById('result');
+            const probabilityDiv = document.getElementById('probability');
+            const diagnosisDiv = document.getElementById('diagnosis');
+            
+            resultDiv.style.display = 'block';
+            
+            if (probability >= 0.5) {
+                resultDiv.className = 'result-container diabetes-positive';
+                diagnosisDiv.innerHTML = `⚠️ <strong>نتیجه:</strong> با احتمال ${probabilityPercent}%، فرد مبتلا به دیابت است.`;
+                diagnosisDiv.style.fontSize = '1.4em';
+            } else {
+                resultDiv.className = 'result-container diabetes-negative';
+                diagnosisDiv.innerHTML = `✅ <strong>نتیجه:</strong> با احتمال ${100 - probabilityPercent}%، فرد دیابت ندارد.`;
+                diagnosisDiv.style.fontSize = '1.4em';
+            }
+            
+            probabilityDiv.textContent = `${probabilityPercent}%`;
+        }
+        
+        // فعال کردن دکمه با ورود اولین داده
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function() {
+                const allFilled = Array.from(document.querySelectorAll('input')).every(input => input.value !== '');
+                if (allFilled) {
+                    document.querySelector('.btn').removeAttribute('disabled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
